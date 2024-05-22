@@ -3,6 +3,8 @@ __pycache__
 .DS_Store
 *.egg-info
 *.pkl
+*.png
+*.p
 *~
 *.python-version
 build
