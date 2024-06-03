@@ -193,8 +193,6 @@ def render(obs, mode='human', close=False):
 
 def render55(obs, layout=None, mode='human', close=False):
 
-    print("iiii2")
-
     use_given_layout=True
     if mode == "egocentric":
         print("111")

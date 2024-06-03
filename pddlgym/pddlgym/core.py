@@ -560,10 +560,9 @@ class PDDLEnv(gym.Env):
         return assignment is not None
 
     def render(self, *args, **kwargs):
-        print("fffff")
+
         if self._render:
-            print(args)
-            print(kwargs)
+
             # exit()
             return self._render(self._state.literals, *args, **kwargs)
 

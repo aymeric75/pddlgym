@@ -21,12 +21,12 @@ from PIL import Image
 import argparse
 parser = argparse.ArgumentParser(description="A script to generate traces from a domain")
 parser.add_argument('domain', type=str, help='domain name')
+parser.add_argument('traces_dir', type=str, help='absolute dir where the .p file of the trace will be')
+
 args = parser.parse_args()
 
 random.seed(1)
 np.random.seed(1)
-
-
 
 
 
@@ -75,7 +75,6 @@ def generate_hanoi_traces():
     counter = 0
 
     # looping over the number of starting positions
-    # for blocksworld only the 1st pb has 4 blocks
     for ii in range(1, 52, 1):
 
         last_two_peg_to_disc_lists_str = [] # must contain only two lists that represent a legal transition
@@ -162,6 +161,8 @@ def generate_hanoi_traces():
 ##################### BLOCKS #######################
 
 def generate_blocks_traces():
+
+    nb_samplings_per_starting_state = 501
 
     ## 1) Loading the env
     env = pddlgym.make("PDDLEnvBlocks4colors-v0", dynamic_action_space=True)
@@ -426,6 +427,203 @@ def generate_all_states():
 
     return all_states
 
+def find_index_2d(array, target):
+    for i, row in enumerate(array):
+        for j, value in enumerate(row):
+            if value == target:
+                return (i, j)
+    return None  # 
+
+def generate_next_states(state):
+
+    
+    # state = np.array([
+    #     [5,5,5,5,5,5,5,5],
+    #     [5,4,0,2,0,0,0,5],
+    #     [5,0,1,0,0,0,0,5],
+    #     [5,0,0,0,0,0,0,5],
+    #     [5,0,0,0,0,0,0,5],
+    #     [5,0,0,0,0,0,0,5],
+    #     [5,0,0,0,0,0,0,5],
+    #     [5,5,5,5,5,5,5,5]
+    # ])
+
+    # where is 1 ? where is 2 ?
+    # 1 is the agent
+    index1 = [np.where(state == 1)[1][0], np.where(state == 1)[0][0]]
+
+    index2 = None
+    if len(np.where(state == 2)[0]) > 0:
+        index2 = [np.where(state == 2)[1][0], np.where(state == 2)[0][0]]
+
+
+    # depending on where is 1, what are the next possibles positions ?
+    # [x, y]
+    # go 
+    next_moves_for_1 = {
+
+        # 1st row    BON
+        '[1, 1]' : [[2, 1], [1, 2]],
+        '[2, 1]' : [[1, 1], [2, 2], [3, 1]],
+        '[3, 1]' : [[2, 1], [4, 1], [3, 2]],
+        '[4, 1]' : [[3, 1], [4, 2], [5, 1]],
+        '[5, 1]' : [[4, 1], [5, 2], [6, 1]],
+        '[6, 1]' : [[5, 1], [6, 2]],
+
+        # 2nd row       BON 
+        '[1, 2]' : [[1, 1], [2, 2], [1, 3]],
+        '[2, 2]' : [[1, 2], [2, 1], [3, 2], [2, 3]],
+        '[3, 2]' : [[2, 2], [3, 1], [4, 2], [3, 3]],
+        '[4, 2]' : [[3, 2], [4, 1], [5, 2], [4, 3]],
+        '[5, 2]' : [[4, 2], [5, 1], [6, 2], [5, 3]],
+        '[6, 2]' : [[5, 2], [6, 1], [6, 3]],
+
+        # 3rd row          BON
+        '[1, 3]' : [[1, 2], [2, 3], [1, 4]],
+        '[2, 3]' : [[1, 3], [2, 2], [3, 3], [2, 4]],
+        '[3, 3]' : [[2, 3], [3, 2], [4, 3], [3, 4]],
+        '[4, 3]' : [[3, 3], [4, 2], [5, 3], [4, 4]],
+        '[5, 3]' : [[4, 3], [5, 2], [6, 3], [5, 4]],
+        '[6, 3]' : [[5, 3], [6, 2], [6, 4]],
+    
+        # 4th row       BON     
+        '[1, 4]' : [[1, 3], [2, 4], [1, 5]],
+        '[2, 4]' : [[1, 4], [2, 3], [3, 4], [2, 5]],
+        '[3, 4]' : [[2, 4], [3, 3], [4, 4], [3, 5]],
+        '[4, 4]' : [[3, 4], [4, 3], [5, 4], [4, 5]],
+        '[5, 4]' : [[4, 4], [5, 3], [6, 4], [5, 5]],
+        '[6, 4]' : [[5, 4], [6, 3], [6, 5]],
+
+        # 5th row           BON
+        '[1, 5]' : [[1, 4], [2, 5], [1, 6]],
+        '[2, 5]' : [[1, 5], [2, 4], [3, 5], [2, 6]],
+        '[3, 5]' : [[2, 5], [3, 4], [4, 5], [3, 6]],
+        '[4, 5]' : [[3, 5], [4, 4], [5, 5], [4, 6]],
+        '[5, 5]' : [[4, 5], [5, 4], [6, 5], [5, 6]],
+        '[6, 5]' : [[5, 5], [6, 4], [6, 6]],
+    
+        # 6th row           BON
+        '[1, 6]' : [[1, 5], [2, 6]],
+        '[2, 6]' : [[1, 6], [2, 5], [3, 6]],
+        '[3, 6]' : [[2, 6], [3, 5], [4, 6]],
+        '[4, 6]' : [[3, 6], [4, 5], [5, 6]],
+        '[5, 6]' : [[4, 6], [5, 5], [6, 6]],
+        '[6, 6]' : [[5, 6], [6, 5]],
+
+
+    }
+
+
+    # if 2 on one of the next possible position ? can it be moved ? yes/no, if no, pos cannot change
+    # if yes, find where it can be moved
+    # print("la")
+    # print(next_moves_for_1[str([index1[0], index1[1]])])
+    
+    next_states = []
+
+    # for all "possible" next states for "1"
+    for next_1 in next_moves_for_1[str([index1[0], index1[1]])]:
+
+        if index2 is not None:
+
+            # if 2 on the next possible move
+            if str(next_1) == str([index2[0], index2[1]]):
+
+                #print("current pos is {}".format(str([index1[0], index1[1]])))
+
+                #print("next pos is {}".format(str(next_1)))
+
+
+                diff = np.array(next_1) - np.array([index1[0], index1[1]])
+
+                move_numb = diff[diff != 0][0]
+                # if move < 0 = go right or down
+                # if move > 0 = go left or up
+                index_diff_zero = np.where(diff != 0)[0][0]
+
+
+                move = ""
+                if move_numb < 0 and index_diff_zero == 0:
+                    move = 'left'
+                    possible_next_2 = [index2[0]-1, index2[1]]
+                elif move_numb < 0 and index_diff_zero == 1:
+                    move = 'up'
+                    possible_next_2 = [index2[0], index2[1]-1]
+                elif move_numb > 0 and index_diff_zero == 0:
+                    move = 'right'
+                    possible_next_2 = [index2[0]+1, index2[1]]
+                elif move_numb > 0 and index_diff_zero == 1:
+                    move = 'down'
+                    possible_next_2 = [index2[0], index2[1]+1]
+
+                #print("move : {}".format(move))
+            
+                # compute the next spot of 2, if outside the range MEANS move NOT possible
+                # 
+                # 
+
+                if 0 in possible_next_2 or 4 in possible_next_2:
+                    # then move not possible
+                    # DONT ADD THE STATE 
+                    continue
+
+                else:
+
+                    empty_state = np.array([
+                        [5,5,5,5,5,5,5,5],
+                        [5,4,0,0,0,0,0,5],
+                        [5,0,0,0,0,0,0,5],
+                        [5,0,0,0,0,0,0,5],
+                        [5,0,0,0,0,0,0,5],
+                        [5,0,0,0,0,0,0,5],
+                        [5,0,0,0,0,0,0,5],
+                        [5,5,5,5,5,5,5,5]
+                    ])
+
+                    # new position 1
+                    empty_state[next_1[1], next_1[0]] = 1
+
+                    #  new position 2
+                    #       if 1,1 then turn 1,1 into 3
+                    if possible_next_2[0] == 1 and possible_next_2[1] == 1:
+                        empty_state[1, 1] = 3
+                    else:
+                        empty_state[possible_next_2[1], possible_next_2[0]] = 2
+                    #   
+                    
+                    next_states.append(empty_state)
+
+            else:
+
+                next_state = state.copy()
+
+                next_state[next_1[1], next_1[0]] = 1
+                if index1[1] == 1 and index1[0] == 1:
+                    next_state[index1[1], index1[0]] = 4
+                else:
+                    next_state[index1[1], index1[0]] = 0
+
+                # 
+                next_states.append(next_state)
+
+        else:
+
+            next_state = state.copy()
+
+            next_state[next_1[1], next_1[0]] = 1
+            
+            if index1[1] == 1 and index1[0] == 1:
+                next_state[index1[1], index1[0]] = 4
+            else:
+                next_state[index1[1], index1[0]] = 0
+
+            # 
+            next_states.append(next_state)
+
+    #print(next_states)    
+
+    return next_states
+
 def generate_all_transitions():
 
     all_transitions = []
@@ -449,6 +647,7 @@ def generate_all_transitions():
 
 def generate_sokoban_traces(transitions):
 
+    nb_samplings_per_starting_state = 501 #3001
 
     # all_traces, obs_occurences, unique_obs_img, unique_transitions
 
@@ -529,20 +728,24 @@ def save_dataset(dire, traces, obs_occurences, unique_obs_img, unique_transition
     }
     if not os.path.exists(dire):
         os.makedirs(dire) 
-    filename = "data.p"
+    filename = "traces.p"
     with open(dire+"/"+filename, mode="wb") as f:
         pickle.dump(data, f)
 
 
+
+print("args.traces_dir tttt")
+print(args.traces_dir)
+
 if args.domain == "hanoi":
     all_traces, obs_occurences, unique_obs_img, unique_transitions = generate_hanoi_traces()
-    save_dataset("traces_hanoi", all_traces, obs_occurences, unique_obs_img, unique_transitions)
+    save_dataset(args.traces_dir, all_traces, obs_occurences, unique_obs_img, unique_transitions)
 elif args.domain == "blocks":
     all_traces, obs_occurences, unique_obs_img, unique_transitions = generate_blocks_traces()
-    save_dataset("traces_blocks", all_traces, obs_occurences, unique_obs_img, unique_transitions)
+    save_dataset(args.traces_dir, all_traces, obs_occurences, unique_obs_img, unique_transitions)
 elif args.domain == "sokoban":
-    all_traces, obs_occurences, unique_obs_img, unique_transitions = generate_sokoban_traces()
-    save_dataset("traces_sokoban", all_traces, obs_occurences, unique_obs_img, unique_transitions)
+    all_traces, obs_occurences, unique_obs_img, unique_transitions = generate_sokoban_traces(generate_all_transitions())
+    save_dataset(args.traces_dir, all_traces, obs_occurences, unique_obs_img, unique_transitions)
 
 
 
