@@ -17,6 +17,8 @@ from PIL import Image
 
 #from networkX_returnTransitionsToRemove import return_transitions_to_remove
 
+print("jjjjjjjjj1")
+
 
 import argparse
 parser = argparse.ArgumentParser(description="A script to generate traces from a domain")
@@ -27,6 +29,8 @@ args = parser.parse_args()
 
 random.seed(1)
 np.random.seed(1)
+
+
 
 
 
@@ -58,7 +62,7 @@ def origin_and_destination(action, peg_to_disc_list_pre, peg_to_disc_list_suc):
 
 def generate_hanoi_traces():
 
-    nb_samplings_per_starting_state = 501
+    nb_samplings_per_starting_state = 11  ########## 501
     ##### requirements for each datasets
 
     #### string for the .make fct
@@ -74,8 +78,9 @@ def generate_hanoi_traces():
     obs_occurences = {}
     counter = 0
 
-    # looping over the number of starting positions
-    for ii in range(1, 52, 1):
+
+    # looping over the number of starting positions ####### 52
+    for ii in range(1, 2, 1):
 
         last_two_peg_to_disc_lists_str = [] # must contain only two lists that represent a legal transition
         last_two_peg_to_disc_lists = []
@@ -97,6 +102,7 @@ def generate_hanoi_traces():
         last_two_peg_to_disc_lists_str.append(str(peg_to_disc_list))
         last_two_peg_to_disc_lists.append(peg_to_disc_list)
         last_two_imgs.append(img)
+
 
         # looping over the nber of states to sample for each starting position
         for jjj in range(nb_samplings_per_starting_state):
@@ -152,10 +158,11 @@ def generate_hanoi_traces():
     print("number of unique transitions is : {}".format(str(len(unique_transitions))))
 
     with open("resultatHanoi4-4.txt", 'w') as file2:
-
         file2.write(str(len(unique_transitions)) + '\n')
 
     return all_traces, obs_occurences, unique_obs_img, unique_transitions
+
+
 
 
 ##################### BLOCKS #######################
@@ -647,7 +654,7 @@ def generate_all_transitions():
 
 def generate_sokoban_traces(transitions):
 
-    nb_samplings_per_starting_state = 501 #3001
+    nb_samplings_per_starting_state = 3 #501
 
     # all_traces, obs_occurences, unique_obs_img, unique_transitions
 
@@ -662,13 +669,9 @@ def generate_sokoban_traces(transitions):
     env = pddlgym.make("PDDLEnvSokoban55-v0", dynamic_action_space=True)
 
     obs, debug_info = env.reset(_problem_idx=0)
-    #print(obs)
-    #exit()
-    #img, blocks_data = env.render()
 
 
 
-    # exit()
 
     for innn, tr in enumerate(transitions):
 

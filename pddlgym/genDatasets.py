@@ -4,6 +4,9 @@ import torch
 import torch.nn.functional as F
 
 import argparse
+
+
+
 parser = argparse.ArgumentParser(description="A script to generate traces from a domain")
 parser.add_argument('--trace_dir', type=str, help='trace_dir name')
 parser.add_argument('--exp_folder', type=str, help='exp_folder name')
@@ -20,6 +23,23 @@ trace_dir = args.trace_dir
 remove_some_trans = str_to_bool(args.remove_some_trans)
 add_noisy_trans = str_to_bool(args.add_noisy_trans)
 ten_percent_noisy_and_dupplicated = str_to_bool(args.ten_percent_noisy_and_dupplicated)
+
+completness = "partial"
+if remove_some_trans == "False":
+    completness = "complete"
+
+cleaness = "noisy"
+if add_noisy_trans == "False":
+    cleaness = "clean"
+
+
+erroneous = "faultless"
+if ten_percent_noisy_and_dupplicated == "False":
+    erroneous = "erroneous"
+
+
+dataset_folder_name = exp_folder+"/"+args.domain+"_"+completness+"_"+cleaness+"_"+erroneous
+
 
 
 # Function to reduce resolution of a single image using np.take
@@ -41,6 +61,28 @@ if args.domain == "blocks":
 
 if args.domain == "sokoban":
     from sokoban_process import normalize, equalize, enhance, preprocess, deenhance, denormalize, unnormalize_colors, normalize_colors
+
+
+
+
+
+def save_dataset(dire, train_set, test_val_set, all_pairs_of_images_reduced_orig, all_actions_one_hot, mean_all, std_all, all_actions_unique, orig_max, orig_min):
+    data = {
+        "train_set": train_set, 
+        "test_val_set": test_val_set, 
+        "all_pairs_of_images_reduced_orig": all_pairs_of_images_reduced_orig, 
+        "all_actions_one_hot": all_actions_one_hot, 
+        "mean_all": mean_all, 
+        "std_all": std_all, 
+        "all_actions_unique": all_actions_unique, 
+        "orig_max": orig_max, 
+        "orig_min": orig_min
+    }
+    if not os.path.exists(dire):
+        os.makedirs(dire) 
+    filename = "traces.p"
+    with open(dire+"/"+filename, mode="wb") as f:
+        pickle.dump(data, f)
 
 
 
@@ -155,6 +197,16 @@ def process_dataset(
 
 
 
+
+
+    print(exp_folder)
+    print(trace_dir)
+    print(remove_some_trans)
+    print(add_noisy_trans)
+    print(ten_percent_noisy_and_dupplicated)
+    print(domain)
+    print("domain")
+    #exit()
     # WAY TO MANY FOLDERS...
     #  WHAT FOLDERS TO BE CREATED TO YOU NEED ? 
     #    Let's say none ? 
@@ -231,10 +283,6 @@ def process_dataset(
 
         random.shuffle(all_the_unique_actions)
 
-
-        print("int(100/perc)")
-        print(100/perc)
-
         #print(int(len(all_the_unique_actions) * perc / 100))
 
         #all_the_unique_actions_noisy_part = all_the_unique_actions[:len(all_the_unique_actions)//int(100/perc)]
@@ -296,12 +344,6 @@ def process_dataset(
             #  1 <=> 100
             #  X <=> 50    x  =  100/50
             # 100/55
-
-        print("all_the_unique_actions")
-        print(len(all_the_unique_actions))
-        print(len(all_the_unique_actions_noisy_part))
-
-  
 
 
 
@@ -373,6 +415,11 @@ def process_dataset(
             elif domain == "blocks":
                 first_split_ = transitio[1].split("', '")
 
+
+            print("transitio[1]")
+            print(transitio[1])
+            exit()
+            
             if domain != "sokoban":
 
                 part1_trans_ = replace_in_str(first_split_[0].replace('[{', ''), domain)
@@ -552,10 +599,6 @@ def process_dataset(
 
 
 
-    print("len all_actions_unique")
-    print(len(all_actions_unique))
-
-
 
 
     for k, v in all_images_reduced_and_norm_uniques_noisy.items():
@@ -642,47 +685,6 @@ def process_dataset(
             f.write("a"+str(i)+" is "+str(all_actions_unique[i])+"\n")
 
 
-    # si trans parcouru == "[{"+part2_trans+"}, {"+part1_trans+"}]"
-
-
-
-    # all_images_reduced > gaussian > clip > preprocess > normalize_colors
-
-   
-    # counntteerr=0
-    # all_images_reduced_gaussian_20 = add_noise(all_images_reduced, seed=1)
-    # counntteerr=0
-    # all_images_reduced_gaussian_30 = add_noise(all_images_reduced, seed=2)
-    # counntteerr=0
-    # all_images_reduced_gaussian_40 = add_noise(all_images_reduced, seed=3)
-
-    # save_noisy("hanoi_4_4_dataset", "all_images_seed1.p", all_images_reduced_gaussian_20)
-    # save_noisy("hanoi_4_4_dataset", "all_images_seed2.p", all_images_reduced_gaussian_30)
-    # save_noisy("hanoi_4_4_dataset", "all_images_seed3.p", all_images_reduced_gaussian_40)
-
-
-    # loaded_noisy1 = load_dataset("/workspace/pddlgym-tests/pddlgym/hanoi_4_4_dataset/all_images_seed1.p")
-    # all_images_seed1 = loaded_noisy1["images"]
-
-    # loaded_noisy2 = load_dataset("/workspace/pddlgym-tests/pddlgym/hanoi_4_4_dataset/all_images_seed2.p")
-    # all_images_seed2 = loaded_noisy2["images"]
-
-    # loaded_noisy3 = load_dataset("/workspace/pddlgym-tests/pddlgym/hanoi_4_4_dataset/all_images_seed3.p")
-    # all_images_seed3 = loaded_noisy3["images"]
-
-    
-
-
-    # all_images_reduced_gaussian_20_preproc, _, _ = preprocess(all_images_reduced, histo_bins=256)
-    # all_images_reduced_gaussian_20_norm, __, __ = normalize_colors(all_images_reduced_gaussian_20_preproc, mean=mean_all, std=std_all, second=True)
-
-
-    # all_images_reduced_gaussian_30_preproc, _, _ = preprocess(all_images_reduced, histo_bins=256)
-    # all_images_reduced_gaussian_30_norm, __, __ = normalize_colors(all_images_reduced_gaussian_30_preproc, mean=mean_all, std=std_all)
-
-    # all_images_reduced_gaussian_40_preproc, _, _ = preprocess(all_images_reduced, histo_bins=256)
-    # all_images_reduced_gaussian_40_norm, __, __ = normalize_colors(all_images_reduced_gaussian_40_preproc, mean=mean_all, std=std_all)
-
     all_images_reduced_gaussian_20_norm = all_images_reduced_and_norm
     all_images_reduced_gaussian_30_norm = all_images_reduced_and_norm
     all_images_reduced_gaussian_40_norm = all_images_reduced_and_norm
@@ -746,6 +748,19 @@ def process_dataset(
             test_val_set.append([all_pairs_of_images_processed_gaussian20[i], all_actions_one_hot[i]])
 
 
+
+    print("len all_actions_unique")
+    print(len(all_actions_unique))
+
+    print(len(train_set))
+
+    print(train_set[0][0][0].shape)
+    print(train_set[0][1].shape)
+
+    exit()
+
+
+
     return train_set, test_val_set, all_pairs_of_images_reduced_orig, all_actions_one_hot, mean_all, std_all, all_actions_unique, orig_max, orig_min
 
 
@@ -754,10 +769,13 @@ def process_dataset(
 
 
 if args.domain == "hanoi":
-    process_dataset(domain="hanoi")
+    train_set, test_val_set, all_pairs_of_images_reduced_orig, all_actions_one_hot, mean_all, std_all, all_actions_unique, orig_max, orig_min = process_dataset(domain="hanoi")
+    save_dataset(dataset_folder_name, train_set, test_val_set, all_pairs_of_images_reduced_orig, all_actions_one_hot, mean_all, std_all, all_actions_unique, orig_max, orig_min)
 
 elif args.domain == "blocks":
-    process_dataset(domain="blocks")
+    train_set, test_val_set, all_pairs_of_images_reduced_orig, all_actions_one_hot, mean_all, std_all, all_actions_unique, orig_max, orig_min = process_dataset(domain="blocks")
+    save_dataset(dataset_folder_name, train_set, test_val_set, all_pairs_of_images_reduced_orig, all_actions_one_hot, mean_all, std_all, all_actions_unique, orig_max, orig_min)
 
 elif args.domain == "sokoban":
-    process_dataset(domain="sokoban")
+    train_set, test_val_set, all_pairs_of_images_reduced_orig, all_actions_one_hot, mean_all, std_all, all_actions_unique, orig_max, orig_min = process_dataset(domain="sokoban")
+    save_dataset(dataset_folder_name, train_set, test_val_set, all_pairs_of_images_reduced_orig, all_actions_one_hot, mean_all, std_all, all_actions_unique, orig_max, orig_min)
