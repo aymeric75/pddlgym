@@ -5,11 +5,34 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import pickle
+import argparse
+
+
+
+print("os.getcwd()")
+print(os.getcwd())
+
+parser = argparse.ArgumentParser(description="A script to generate the partial dfa")
+parser.add_argument('--domain', type=str, required=True)
+parser.add_argument('--exp_folder', type=str, help='exp_folder name')
+args = parser.parse_args()
+
 
 #path = './Full_DFA_Sokoban_6_6.dot'
 #path = './Full-DFA-Hanoi_4_4.dot'
 
-path = './Full-DFA_blocks4Colors.dot'
+path = ""
+
+
+if args.domain == "blocks":
+    path = os.getcwd()+"/r_latplan_datasets/"+str(args.domain)+"/"+'Full-DFA_blocks4Colors.dot'
+if args.domain == "sokoban":
+    path = os.getcwd()+"/r_latplan_datasets/"+str(args.domain)+"/"+'Full_DFA_Sokoban_6_6.dot'
+else:
+    path = os.getcwd()+"/r_latplan_datasets/"+str(args.domain)+"/"+'Full-DFA-Hanoi_4_4.dot'
+
+exp_folder = args.exp_folder
+
 
 matplotlib.use("Agg") 
 
@@ -27,8 +50,6 @@ def save_stuff(dire, array, file_name):
     data = {
         "stuff": array,
     }
-    if not os.path.exists(dire):
-        os.makedirs(dire) 
     filename = str(file_name)+".p"
     with open(dire+"/"+filename, mode="wb") as f:
         pickle.dump(data, f)
@@ -37,7 +58,6 @@ def save_stuff(dire, array, file_name):
 
 
 def return_transitions_to_remove(
-    dir_saving_name = "blocks4_missing_edges_2",
     alternative_of_at_least_N_states = 8
     ):
 
@@ -61,8 +81,8 @@ def return_transitions_to_remove(
         print(type(list(edge)[1]))
 
 
-        #if 'fake' not in edge and ( list(edge)[0] != '300000000001000000000000000000000000' and list(edge)[1] != '300001000000000000000000000000000000' ) and ( list(edge)[0] != '402000000000000000000000000000001000' and list(edge)[1] != '402000000000000000000000000000010000' ):
-        if 'fake' not in edge and ( list(edge)[0] == '([[], [b], [c], [d]], a)' and list(edge)[1] == '([[], [b], [c], [d, a]], )' ):
+        #if 'fake' not in edge and ( list(edge)[0] == '([[], [b], [c], [d]], a)' and list(edge)[1] == '([[], [b], [c], [d, a]], )' ):
+        if 'fake' not in edge:
 
             paths = nx.all_simple_paths(G, edge[0], edge[1], cutoff=alternative_of_at_least_N_states-1)
 
@@ -134,9 +154,7 @@ def return_transitions_to_remove(
 
     # print(nx.shortest_path(G_short, edge_to_test_on[0], edge_to_test_on[1]))
 
-    if not os.path.exists(dir_saving_name):
-        os.makedirs(dir_saving_name) 
-    exp_folder = dir_saving_name
+
 
     save_stuff(exp_folder, edge_to_test_on[0], "init_state")
     save_stuff(exp_folder, edge_to_test_on[1], "goal_state")
@@ -148,4 +166,9 @@ def return_transitions_to_remove(
 
 
 
-return_transitions_to_remove()
+#return_transitions_to_remove()
+
+
+
+if args.domain == "hanoi":
+    return_transitions_to_remove()

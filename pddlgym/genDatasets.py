@@ -2,9 +2,9 @@ import pickle
 import numpy as np
 import torch
 import torch.nn.functional as F
-
+import os
 import argparse
-
+import random
 
 
 parser = argparse.ArgumentParser(description="A script to generate traces from a domain")
@@ -38,8 +38,7 @@ if ten_percent_noisy_and_dupplicated == "False":
     erroneous = "erroneous"
 
 
-dataset_folder_name = exp_folder+"/"+args.domain+"_"+completness+"_"+cleaness+"_"+erroneous
-
+dataset_folder_name = exp_folder
 
 
 # Function to reduce resolution of a single image using np.take
@@ -80,7 +79,7 @@ def save_dataset(dire, train_set, test_val_set, all_pairs_of_images_reduced_orig
     }
     if not os.path.exists(dire):
         os.makedirs(dire) 
-    filename = "traces.p"
+    filename = "data.p"
     with open(dire+"/"+filename, mode="wb") as f:
         pickle.dump(data, f)
 
@@ -251,7 +250,29 @@ def process_dataset(
 
     loaded_traces = loaded_dataset["traces"]
 
+    
+
     if remove_some_trans:
+
+        transis_to_remove = []
+        if remove_some_trans:
+            loaded_removable_trans = load_dataset(exp_folder+"/deleted_edges.p")
+            transis_to_remove = loaded_removable_trans["stuff"]
+
+            loaded_removable_edge_goal = load_dataset(exp_folder+"/goal_state.p")
+            edge_removed_goal = loaded_removable_edge_goal["stuff"]
+            goal_st = edge_removed_goal
+
+            loaded_removable_edge_init = load_dataset(exp_folder+"/init_state.p")
+            edge_removed_init = loaded_removable_edge_init["stuff"]
+            init_st = edge_removed_init
+
+        
+        transis_to_remove_str = []
+        for tr in transis_to_remove:
+            transis_to_remove_str.append(str(tr))
+
+
         loaded_traces_after_prunning = []
         for iii, trace in enumerate(loaded_traces):
             #trace_copy = trace.copy()
@@ -416,10 +437,7 @@ def process_dataset(
                 first_split_ = transitio[1].split("', '")
 
 
-            print("transitio[1]")
-            print(transitio[1])
-            exit()
-            
+
             if domain != "sokoban":
 
                 part1_trans_ = replace_in_str(first_split_[0].replace('[{', ''), domain)
@@ -756,8 +774,6 @@ def process_dataset(
 
     print(train_set[0][0][0].shape)
     print(train_set[0][1].shape)
-
-    exit()
 
 
 
