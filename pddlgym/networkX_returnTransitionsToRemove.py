@@ -15,7 +15,15 @@ print(os.getcwd())
 parser = argparse.ArgumentParser(description="A script to generate the partial dfa")
 parser.add_argument('--domain', type=str, required=True)
 parser.add_argument('--exp_folder', type=str, help='exp_folder name')
+#parser.add_argument('--exp_nb', type=str, help='exp_nb name')
+# 
 args = parser.parse_args()
+
+
+# create the "pbs"
+problems_folder_name = args.exp_folder+"/pbs"
+if not os.path.exists(problems_folder_name):
+    os.makedirs(problems_folder_name) 
 
 
 #path = './Full_DFA_Sokoban_6_6.dot'
@@ -24,12 +32,15 @@ args = parser.parse_args()
 path = ""
 
 
+
 if args.domain == "blocks":
     path = os.getcwd()+"/r_latplan_datasets/"+str(args.domain)+"/"+'Full-DFA_blocks4Colors.dot'
-if args.domain == "sokoban":
+elif args.domain == "sokoban":
     path = os.getcwd()+"/r_latplan_datasets/"+str(args.domain)+"/"+'Full_DFA_Sokoban_6_6.dot'
 else:
     path = os.getcwd()+"/r_latplan_datasets/"+str(args.domain)+"/"+'Full-DFA-Hanoi_4_4.dot'
+
+
 
 exp_folder = args.exp_folder
 
@@ -58,7 +69,8 @@ def save_stuff(dire, array, file_name):
 
 
 def return_transitions_to_remove(
-    alternative_of_at_least_N_states = 8
+    alternative_of_at_least_N_states = 8,
+    nodes_to_avoid = []
     ):
 
 
@@ -67,15 +79,17 @@ def return_transitions_to_remove(
     alternative_path = []
     nb_nodes_of_max_path = 0
 
-    #alternative_of_at_least_N_states = 11 # hanoi
-
-    #alternative_of_at_least_N_states = 13 # blocks
-
 
     ### loop over all the edges of the graph until it finds an edge for which
     # a plan of at least alternative_of_at_least_N_states states (10 steps) exists !
     # when found, save the <=> plan and edge in edge_to_test_on and alternative_path
+
+    
+
     for edge in G.edges():
+
+        if edge[0] in  nodes_to_avoid:
+            continue
 
         print(list(edge)[1])
         print(type(list(edge)[1]))
@@ -153,22 +167,87 @@ def return_transitions_to_remove(
 
 
     # print(nx.shortest_path(G_short, edge_to_test_on[0], edge_to_test_on[1]))
+    len_alternative = len(alternative_path)
+
+    return removed_edges, edge_to_test_on[0], edge_to_test_on[1], len_alternative
 
 
 
-    save_stuff(exp_folder, edge_to_test_on[0], "init_state")
-    save_stuff(exp_folder, edge_to_test_on[1], "goal_state")
-    save_stuff(exp_folder, removed_edges, "deleted_edges")
+
+
+def get_and_split_subdirs(base_dir):
+
+    subdirs = []
+    
+    # Iterate through the contents of the base directory
+    for entry in os.listdir(base_dir):
+        entry_path = os.path.join(base_dir, entry)
+        
+        # Check if the entry is a directory
+        if os.path.isdir(entry_path):
+            # Split the directory name by "_"
+            split_name = entry.split("_")
+            if len(split_name) > 1:
+                subdirs.append(split_name[0])
+    
+    return subdirs
 
 
 
-    return removed_edges
-
-
-
-#return_transitions_to_remove()
-
+to_avoid = get_and_split_subdirs(args.exp_folder+"/pbs")
 
 
 if args.domain == "hanoi":
-    return_transitions_to_remove()
+
+    # nber steps _ first state _ 0
+    if len(to_avoid) > 2:
+        print("there are already three problems")
+    
+    else:
+
+        removed_edges, edge_to_test_on_0, edge_to_test_on_1, len_  = return_transitions_to_remove(10, to_avoid)
+        problem_folder_name = args.exp_folder+"/pbs/"+edge_to_test_on_0+"_"+str(len_)
+
+        if not os.path.exists(problem_folder_name):
+            os.makedirs(problem_folder_name) 
+
+            save_stuff(problem_folder_name, edge_to_test_on_0, "init_sym")
+            save_stuff(problem_folder_name, edge_to_test_on_1, "goal_sym")
+            save_stuff(problem_folder_name, removed_edges, "deleted_edges_sym")
+
+elif args.domain == "blocks":
+
+    if len(to_avoid) > 2:
+        print("there are already three problems")
+    
+    else:
+
+
+        removed_edges, edge_to_test_on_0, edge_to_test_on_1, len_  = return_transitions_to_remove(12, to_avoid)
+        problem_folder_name = args.exp_folder+"/pbs/"+edge_to_test_on_0+"_"+str(len_)
+
+        if not os.path.exists(problem_folder_name):
+            os.makedirs(problem_folder_name) 
+
+            save_stuff(problem_folder_name, edge_to_test_on_0, "init_sym")
+            save_stuff(problem_folder_name, edge_to_test_on_1, "goal_sym")
+            save_stuff(problem_folder_name, removed_edges, "deleted_edges_sym")
+
+elif args.domain == "sokoban":
+    
+
+    if len(to_avoid) > 2:
+        print("there are already three problems")
+    
+    else:
+
+
+        removed_edges, edge_to_test_on_0, edge_to_test_on_1, len_  = return_transitions_to_remove(18, to_avoid)
+        problem_folder_name = args.exp_folder+"/pbs/"+edge_to_test_on_0+"_"+str(len_)
+        print("icii")
+        print(problem_folder_name)
+        if not os.path.exists(problem_folder_name):
+            os.makedirs(problem_folder_name)
+            save_stuff(problem_folder_name, edge_to_test_on_0, "init_sym")
+            save_stuff(problem_folder_name, edge_to_test_on_1, "goal_sym")
+            save_stuff(problem_folder_name, removed_edges, "deleted_edges_sym")

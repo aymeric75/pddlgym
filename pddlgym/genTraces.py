@@ -62,7 +62,7 @@ def origin_and_destination(action, peg_to_disc_list_pre, peg_to_disc_list_suc):
 
 def generate_hanoi_traces():
 
-    nb_samplings_per_starting_state = 11  ########## 501
+    nb_samplings_per_starting_state = 501  ########## 501
     ##### requirements for each datasets
 
     #### string for the .make fct
@@ -80,7 +80,7 @@ def generate_hanoi_traces():
 
 
     # looping over the number of starting positions ####### 52
-    for ii in range(1, 2, 1):
+    for ii in range(1, 52, 1):
 
         last_two_peg_to_disc_lists_str = [] # must contain only two lists that represent a legal transition
         last_two_peg_to_disc_lists = []
